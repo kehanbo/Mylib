@@ -17,14 +17,12 @@
 ************************************************************
 *ajax
 ************************************************************
-*
+*formateString
 *
 *
 */
 
 function Mylib() { }
-
-
 Mylib.prototype = {
     /**********************获取元素部分**********************************/
     $id: function (id) {
@@ -123,7 +121,19 @@ Mylib.prototype = {
 
         }
     },
-    dateFormate: function () { }
+    /*数据绑定*/
+    formateString: function (str, data) {
+        return str.replace(/#\((\w+)\)/g, function (match, key) {
+            return typeof data[key] === "undefined" ? '' : data[key]
+        });
+    }
+
+
+
+
+
+
+    
 }
 
 var $$ = new Mylib();
