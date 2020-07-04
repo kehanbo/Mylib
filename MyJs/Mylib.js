@@ -1,9 +1,15 @@
 /*
-*******************获取元素部分******************************
+************************************************************
+获取元素部分
+************************************************************
 *$id
 *$tag
+
+
+
 ************************************************************
-*******************检测数据类型部分***************************
+检测数据类型部分
+************************************************************
 *isNumber
 *isBoolean
 *isString
@@ -14,8 +20,17 @@
 *trim
 *ltrim
 *rtrim
+
+
+
 ************************************************************
-*ajax
+ajax
+************************************************************
+
+
+
+************************************************************
+arttemplate语法A
 ************************************************************
 *formateString
 *
@@ -24,53 +39,62 @@
 
 function Mylib() { }
 Mylib.prototype = {
-    /**********************获取元素部分**********************************/
+    /*************************************************************************************
+     *                                      获取元素部分
+     * ***********************************************************************************/
     $id: function (id) {
         return document.getElementById(id)
     },
     $tag: function (tag) {
         return document.getElementsByTagName(tag)
     },
-    /*****************************数据类型检测部分************************/
-    isNumber: function (val) {
+
+
+    /*************************************************************************************
+     *                                      数据类型检测部分A
+     * ***********************************************************************************/
+    IsNumber: function (val) {
         return typeof val === 'number' && isFinite(val)
     },
-    isBoolean: function (val) {
+    IsBoolean: function (val) {
         return typeof val === "boolean";
     },
-    isString: function (val) {
+    IsString: function (val) {
         return typeof val === "string";
     },
-    isUndefined: function (val) {
+    IsUndefined: function (val) {
         return typeof val === "undefined";
     },
-    isObj: function (str) {
+    IsObj: function (str) {
         if (str === null || typeof str === 'undefined') {
             return false;
         }
         return typeof str === 'object';
     },
-    isNull: function (val) {
+    IsNull: function (val) {
         return val === null;
     },
-    isArray: function (arr) {
+    IsArray: function (arr) {
         if (arr === null || typeof arr === 'undefined') {
             return false;
         }
         return arr.constructor === Array;
     },
-    trim: function (str) {
+    Trim: function (str) {
         return str.replace(/(^\s*)|(\s*$)/g, '');
     },
-    ltrim: function (str) {
+    Ttrim: function (str) {
         return str.replace(/(^\s*)/g, '');
     },
-    rtrim: function (str) {
+    Ttrim: function (str) {
         return str.replace(/(\s*$)/g, '');
     },
-    /***********************************************************************/
-    /*原生ajax封装*/
-    ajax: function (data) {
+
+
+    /*************************************************************************************
+     *                                      数据类型检测部分A
+     * ***********************************************************************************/
+    Ajax: function (data) {
         //data{data:'',datatype:'json/xml',type:"get/posh",url:"",asyn:"true/false",success:function(){},failure:function(){}}
         //data:{username:123,password:456}
         //data:'username:123&password:456';
@@ -121,22 +145,70 @@ Mylib.prototype = {
 
         }
     },
-    /*数据绑定*/
-    formateString: function (str, data) {
+    /*************************************************************************************
+     *                                      数据绑定
+     * ***********************************************************************************/
+    FormateString: function (str, data) {
         return str.replace(/#\((\w+)\)/g, function (match, key) {
             return typeof data[key] === "undefined" ? '' : data[key]
         });
+    },
+
+    /*************************************************************************************
+     *                                      arttemplate语法
+     * ***********************************************************************************/
+    /****************************【注意要引入arttemplate文件】*****************************/
+    //封装成一个函数
+    BindTemplate: function (tempalteId, data) {
+        var html = template(tempalteId, data);
+        return html;
+    },
+    ArtTemplate: function (str, data) {
+        var render = template.compile(str);
+        return render(data)
+    },
+
+    /*************************************************************************************
+     *                                     克隆对象
+     * ***********************************************************************************/
+    /*克隆一个json对象*/
+    CopyObject:function (target,source) {
+        for (var i in source){
+            target[i]=source[i]
+        }
+        return target
+    },
+    /*可克隆多个json对象*/
+    // 功能呢实现CopyObjectMany(target,obj1,obj2,obj3)
+    CopyObjectMany:function () {
+        var key,i = 0,len = arguments.length,target = null,copy;
+        if(len === 0){
+            return;
+        }else if(len === 1){
+            target = this;
+        }else{
+            i++;
+            target = arguments[0];
+        }
+        for(; i < len; i++){
+            for(key in arguments[i]){
+                copy = arguments[i][key];
+                target[key] = copy;
+            }
+        }
+        return target;
     }
-
-
-
-
-
-
     
+
+
+
 }
 
-var $$ = new Mylib();
+
+    /*************************************************************************************
+     *                                   对象实例化
+     * ***********************************************************************************/
+    var $$ = new Mylib();
 
 
 
