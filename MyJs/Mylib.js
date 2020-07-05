@@ -89,60 +89,68 @@ Mylib.prototype = {
     Ttrim: function (str) {
         return str.replace(/(\s*$)/g, '');
     },
-
+    //获取数组中最大的值 标准写法     【同理：要获取最小值，那么将max改成min】
+    getMax: function (arr) {
+        var arrlen = arr.length;
+        for (var i = 0, ret = arr[0]; i < arrlen; i++) {
+            ret = Math.max(ret, arr[i])
+        }
+        return ret;
+    },
+    //获取多个数中最大的值  call用法  【同理：要获取最小值，那么将max改成min】
+    getMax2: function () {
+        return Math.max.call(null, 1, 2, 3, 4, 5, 6, 7);
+    },
+    //获取数组中最大的值 apply用法   【同理：要获取最小值，那么将max改成min】
+    getMax3: function (arr) {
+        return Math.max.apply(null, arr);
+    },
 
     /*************************************************************************************
-     *                                      数据类型检测部分A
+     *                                      ajax封装
      * ***********************************************************************************/
-    Ajax: function (data) {
-        //data{data:'',datatype:'json/xml',type:"get/posh",url:"",asyn:"true/false",success:function(){},failure:function(){}}
-        //data:{username:123,password:456}
-        //data:'username:123&password:456';
-        //第一步：创建xhr对象
-        var xhr = null;
-        if (window.XMLHttpRequest) {
-            //标准浏览器
-            xhr = new XMLHttpRequest();
-        }
-        else {
-            //早期的ie浏览器
-            xhr = new ActiveXObject('Microsoft.XMLHTTP');
-        }
-        //第二步：准备发送前的一些配置参数
-        var type = data.type == 'get' ? 'get' : 'posh';
-        var url = '';
-        if (data.url) {
-            url = data.url;
-            if (type == 'get') {
-                url += "?" + data.data + "&_t=" + new Date().getTime();;
+     //ajax - 前面我们学习的
+     myAjax:function(URL,fn){
+        var xhr = createXHR();	//返回了一个对象，这个对象IE6兼容。
+        xhr.onreadystatechange = function(){
+            if(xhr.readyState === 4){
+                if(xhr.status >= 200 && xhr.status < 300 || xhr.status == 304){
+                    fn(xhr.responseText);
+                }else{
+                    alert("错误的文件！");
+                }
             }
-        }
-        var falg = data.asyn == 'true' ? 'true' : 'false';
-        xhr.open(type, url, falg);
+        };
+        xhr.open("get",URL,true);
+        xhr.send();
 
-        //第三步：执行发送的动作
-        if (type == 'get') {
-            xhr.send(null);
-        } else if (type == 'posh') {
-            xhr.setRequestHeader("Content-Type", "application/x-www-from-urlencoded");
-            xhr.send(data.data);
-        }
-        //第四步：指定回调函数
-        xhr.onreadystatechange = function () {
-            if (this.readyState == 4) {
-                if (this.status == 200) {
-                    if (typeof data.success == 'function') {
-                        var d = data.dataType == 'xml' ? xhr.responseXML : xhr.responseText;
-                        data.success(d);
-                    }
-                    else {
-                        if (typeof data.failure == 'function') {
-                            data.failure();
+        //闭包形式，因为这个函数只服务于ajax函数，所以放在里面
+        function createXHR() {
+            //本函数来自于《JavaScript高级程序设计 第3版》第21章
+            if (typeof XMLHttpRequest != "undefined") {
+                return new XMLHttpRequest();
+            } else if (typeof ActiveXObject != "undefined") {
+                if (typeof arguments.callee.activeXString != "string") {
+                    var versions = ["MSXML2.XMLHttp.6.0", "MSXML2.XMLHttp.3.0",
+                            "MSXML2.XMLHttp"
+                        ],
+                        i, len;
+
+                    for (i = 0, len = versions.length; i < len; i++) {
+                        try {
+                            new ActiveXObject(versions[i]);
+                            arguments.callee.activeXString = versions[i];
+                            break;
+                        } catch (ex) {
+                            //skip
                         }
                     }
                 }
-            }
 
+                return new ActiveXObject(arguments.callee.activeXString);
+            } else {
+                throw new Error("No XHR object available.");
+            }
         }
     },
     /*************************************************************************************
@@ -227,8 +235,16 @@ Mylib.prototype = {
             var e = arr[i].substring(c + 1);//截取等号后的参数值
             json[d] = e;//以名/值对的形式存储在对象中
         }
-        return json;//返回对象
+        return json;//返回对象，这里返回的是一个json的对象 
+    },
+    /*************************************************************************************
+    *                                   如何将伪数组转化成真数组
+    *************************************************************************************/
+    //例子：var json={0:'first',2:'second'}  -------->  ["first","second"]
+    callArray: function (json) {
+        return Array.prototype.slice.call(json);
     }
+
 
 
 
