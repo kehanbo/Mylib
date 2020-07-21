@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>TodoList</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+</head>
+
+<body>
+    <div id="app">
+        <!-- 在此补充代码 -->
+        <!-- v-model双向绑定数据 -->
+        <input type="text" v-model='inputvalue' placeholder="请输入你喜欢的水果">
+        <button v-on:click='topClickBtn'>添加</button>
+        <button v-on:click='shanchu'>删除</button>
+        <ul>
+            <!-- <li v-for='item in concentlist'>{{item}}</li> -->
+            <todo-list v-bind:concent='item' v-for='item in concentlist'>
+            </todo-list>
+        </ul>
+    </div>
+    <script>
+        // //定义一个全局的组件化插件
+        // Vue.component('TodoList',{
+        //     props:['concent'],
+        //     template:"<li>{{concent}}</li>"
+        // })
+
+
+        //在这里定义局部的组件化插件,注意：局部的组件需要在Vue实例中注册
+        var TodoList = {
+            props: ['concent'],
+            template: '<li>{{concent}}</li>'
+        }
+
+        // 在此补充代码
+        var app = new Vue({
+            //这里注册局部的组件
+            components: {
+                TodoList: TodoList
+            },
+
+            //管理的区域
+            el: '#app',
+            //管理的数据，固定用法，注意，里面都是键值对的形式
+            data: {
+                concentlist: [],
+                inputvalue: ''
+            },
+            //方法都放在里面
+            methods: {
+                topClickBtn: function () {
+                    if (this.inputvalue == '') {
+                        alert('请输入')
+                    } else {
+                        this.$data.concentlist.push(this.inputvalue)
+                        this.inputvalue = ''
+                    }
+
+                },
+                shanchu:function(){
+                    if(this.$data.concentlist.length == 0){
+                        alert('没有更多的数据删除了')
+                        return;
+                    }else{
+                        this.$data.concentlist.pop(this.inputvalue)
+                    }
+                }
+            }
+
+        })
+    </script>
+</body>
+
+</html>

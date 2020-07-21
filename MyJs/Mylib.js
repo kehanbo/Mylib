@@ -123,7 +123,7 @@ $$.extend($$, {
     //事件委托
     delegate: function (pid, eventType, selector, fn) {
         //参数处理
-        var parent = $$.$id(pid);
+        var parent = $$.id(pid);
         function handle(e) {
             var target = $$.GetTarget(e);
             if (target.nodeName.toLowerCase() === selector || target.id === selector || target.className.indexOf(selector) != -1) {
@@ -144,11 +144,20 @@ $$.extend($$, {
 
 /**选择框架*/
 $$.extend($$, {
-    $id: function (str) {
+    //获取ID元素
+    id: function (str) {
         return document.getElementById(str)
     },
-    $tag: function (tag) {
-        return document.getElementsByTagName(tag)
+    //缩小选择范围，可选择某ID里面的某类元素
+    tag: function (tag, context) {
+        if (typeof context == 'string') {
+            context = $$.id(context);
+        }
+        if (context) {
+            return context.getElementsByTagName(tag);
+        } else {
+            return document.getElementsByTagName(tag);
+        }
     },
     //tab
     tab: function (id) {
@@ -176,7 +185,140 @@ $$.extend($$, {
             }
         }
 
+    },
+    //class选择器
+    class: function (className, context) {
+        var elements;
+        var dom;
+        //如果传递过来的是字符串 ，则转化成元素对象
+        if ($$.isString(context)) {
+            context = document.getElementById(context);
+        }
+        //如果兼容getElementsByClassName
+        if (context.getElementsByClassName) {
+            return context.getElementsByClassName(className);
+        } else {
+            //如果浏览器不支持
+            dom = context.getElementsByTagName('*');
+            for (var i, len = dom.length; i < len; i++) {
+                if (dom[i].className && dom[i].className == className) {
+                    elements.push(dom[i]);
+                }
+            }
+        }
+        return elements;
+    },
+    //分组选择器
+    group: function (content) {
+        var result = [], doms = [];
+        var arr = $$.trim(content).split(',');
+        //alert(arr.length);
+        for (var i = 0, len = arr.length; i < len; i++) {
+            var item = $$.trim(arr[i])
+            var first = item.charAt(0)
+            var index = item.indexOf(first)
+            if (first === '.') {
+                doms = $$.class(item.slice(index + 1))
+                //每次循环将doms保存在reult中
+                //result.push(doms);//错误来源
+
+                //陷阱1解决 封装重复的代码成函数
+                pushArray(doms, result)
+
+            } else if (first === '#') {
+                doms = [$$.id(item.slice(index + 1))]//陷阱：之前我们定义的doms是数组，但是$id获取的不是数组，而是单个元素
+                //封装重复的代码成函数
+                pushArray(doms, result)
+            } else {
+                doms = $$.tag(item)
+                pushArray(doms, result)
+            }
+        }
+        return result;
+
+        //封装重复的代码
+        function pushArray(doms, result) {
+            for (var j = 0, domlen = doms.length; j < domlen; j++) {
+                result.push(doms[j])
+            }
+        }
+    },
+    //层次选择器
+    cengci: function (select) {
+        //个个击破法则 -- 寻找击破点
+        var sel = $$.trim(select).split(' ');
+        var result = [];
+        var context = [];
+        for (var i = 0, len = sel.length; i < len; i++) {
+            result = [];
+            var item = $$.trim(sel[i]);
+            var first = sel[i].charAt(0)
+            var index = item.indexOf(first)
+            if (first === '#') {
+                //如果是#，找到该元素，
+                pushArray([$$.id(item.slice(index + 1))]);
+                context = result;
+            } else if (first === '.') {
+                //如果是.
+                //如果是.
+                //找到context中所有的class为【s-1】的元素 --context是个集合
+                if (context.length) {
+                    for (var j = 0, contextLen = context.length; j < contextLen; j++) {
+                        pushArray($$.class(item.slice(index + 1), context[j]));
+                    }
+                } else {
+                    pushArray($$.class(item.slice(index + 1)));
+                }
+                context = result;
+            } else {
+                //如果是标签
+                //遍历父亲，找到父亲中的元素==父亲都存在context中
+                if (context.length) {
+                    for (var j = 0, contextLen = context.length; j < contextLen; j++) {
+                        pushArray($$.tag(item, context[j]));
+                    }
+                } else {
+                    pushArray($$.tag(item));
+                }
+                context = result;
+            }
+        }
+
+        return context;
+
+        //封装重复的代码
+        function pushArray(doms) {
+            for (var j = 0, domlen = doms.length; j < domlen; j++) {
+                result.push(doms[j])
+            }
+        }
+    },
+    //多组+层次
+    select: function (str) {
+        var result = [];
+        var item = $$.trim(str).split(',');
+        for (var i = 0, glen = item.length; i < glen; i++) {
+            var select = $$.trim(item[i]);
+            var context = [];
+            context = $$.cengci(select);
+            pushArray(context);
+
+        };
+        return result;
+
+        //封装重复的代码
+        function pushArray(doms) {
+            for (var j = 0, domlen = doms.length; j < domlen; j++) {
+                result.push(doms[j])
+            }
+        }
+    },
+    //html5实现的选择器
+    all: function (selector, context) {
+        context = context || document;
+        return context.querySelectorAll(selector);
     }
+
 })
 
 /**字符串相关操作模块*/
@@ -292,7 +434,192 @@ $$.extend($$, {
     }
 })
 
-/**数据绑定模块*/
+/**css框架模块*/
 $$.extend($$, {
+    //样式
+    css: function (context, key, value) {
+        console.log('dfdfd')
+        var dom = $$.isString(context) ? $$.all(context) : context;
+        //如果是数组
+        if (dom.length) {
+            //先骨架骨架 -- 如果是获取模式 -- 如果是设置模式
+            //如果value不为空，则表示设置
+            if (value) {
+                for (var i = dom.length - 1; i >= 0; i--) {
+                    setStyle(dom[i], key, value);
+                }
+                //            如果value为空，则表示获取
+            } else {
+                return getStyle(dom[0]);
+            }
+            //如果不是数组
+        } else {
+            if (value) {
+                setStyle(dom, key, value);
+            } else {
+                return getStyle(dom);
+            }
+        }
+        function getStyle(dom) {
+            if (dom.currentStyle) {
+                return dom.currentStyle[key];
+            } else {
+                return getComputedStyle(dom, null)[key];
+            }
+        }
+        function setStyle(dom, key, value) {
+            dom.style[key] = value;
+        }
+    },
+    //显示
+    show: function (content) {
+        var doms = $$.all(content)
+        for (var i = 0, len = doms.length; i < len; i++) {
+            $$.css(doms[i], 'display', 'block');
+        }
+    },
+    //隐藏和显示元素
+    hide: function (content) {
+        var doms = $$.all(content)
+        for (var i = 0, len = doms.length; i < len; i++) {
+            $$.css(doms[i], 'display', 'none');
+        }
+    },
+    //元素高度宽度概述
+    //计算方式：clientHeight clientWidth innerWidth innerHeight
+    //元素的实际高度+border，也不包含滚动条
+    Width: function (id) {
+        return $$.id(id).clientWidth
+    },
+    Height: function (id) {
+        return $$.id(id).clientHeight
+    },
 
+
+    //元素的滚动高度和宽度
+    //当元素出现滚动条时候，这里的高度有两种：可视区域的高度 实际高度（可视高度+不可见的高度）
+    //计算方式 scrollwidth
+    scrollWidth: function (id) {
+        return $$.id(id).scrollWidth
+    },
+    scrollHeight: function (id) {
+        return $$.id(id).scrollHeight
+    },
+
+
+    //元素滚动的时候 如果出现滚动条 相对于左上角的偏移量
+    //计算方式 scrollTop scrollLeft
+    scrollTop: function (id) {
+        return $$.id(id).scrollTop
+    },
+    scrollLeft: function (id) {
+        return $$.id(id).scrollLeft
+    },
+
+    //获取屏幕的高度和宽度
+    screenHeight: function () {
+        return window.screen.height
+    },
+    screenWidth: function () {
+        return window.screen.width
+    },
+
+
+    //文档视口的高度和宽度
+    wWidth: function () {
+        return document.documentElement.clientWidth
+    },
+    wHeight: function () {
+        return document.documentElement.clientHeight
+    },
+    //文档滚动区域的整体的高和宽
+    wScrollHeight: function () {
+        return document.body.scrollHeight
+    },
+    wScrollWidth: function () {
+        return document.body.scrollWidth
+    },
+    //获取滚动条相对于其顶部的偏移
+    wScrollTop: function () {
+        var scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop;
+        return scrollTop
+    },
+    //获取滚动条相对于其左边的偏移
+    wScrollLeft: function () {
+        var scrollLeft = document.body.scrollLeft || (document.documentElement && document.documentElement.scrollLeft);
+        return scrollLeft
+    }
+})
+
+/**封装属性框架*/
+$$.extend($$, {
+    //属性操作，获取属性的值，设置属性的值 at tr（'test','target','_blank'）
+    attr: function (content, key, value) {
+        var dom = $$.all(content);
+        //        如果是数组  比如tag
+        if (dom.length) {
+            if (value) {
+                for (var i = 0, len = dom.length; i < len; i++) {
+                    dom[i].setAttribute(key, value);
+                }
+            } else {
+                return dom[0].getAttribute(key);
+            }
+            //            如果是单个元素  比如id
+        } else {
+            if (value) {
+                dom.setAttribute(key, value);
+            } else {
+                return dom.getAttribute(key);
+            }
+        }
+    },
+    //动态添加和移除class
+    addClass: function (context, name) {
+        var doms = $$.all(context);
+        //如果获取的是集合
+        if (doms.length) {
+            for (var i = 0, len = doms.length; i < len; i++) {
+                addName(doms[i]);
+            }
+            //如果获取的不是集合
+        } else {
+            addName(doms);
+        }
+        function addName(dom) {
+            dom.className = dom.className + ' ' + name;
+        }
+    },
+    removeClass: function (context, name) {
+        var doms = $$.all(context);
+        if (doms.length) {
+            for (var i = 0, len = doms.length; i < len; i++) {
+                removeName(doms[i]);
+            }
+        } else {
+            removeName(doms);
+        }
+        function removeName(dom) {
+            dom.className = dom.className.replace(name, '');
+        }
+    },
+    //判断是否有
+    hasClass: function (context, name) {
+        var doms = $$.all(context)
+        var flag = true;
+        for (var i = 0, len = doms.length; i < len; i++) {
+            flag = flag && check(doms[i], name)
+        }
+
+        return flag;
+        //判定单个元素
+        function check(element, name) {
+            return -1 < (" " + element.className + " ").indexOf(" " + name + " ")
+        }
+    },
+    //获取
+    getClass: function (id) {
+        var doms = $$.all(id)
+        return $$.trim(doms[0].className).split(" ")
+    }
 })
